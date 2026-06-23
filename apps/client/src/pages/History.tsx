@@ -115,34 +115,38 @@ export function History() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>History</h1>
-          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{monthLabel(month)}</p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>History</h1>
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{monthLabel(month)}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={toggleSelectMode}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-80"
+              style={{
+                backgroundColor: selectMode ? 'var(--color-primary)' : 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                color: selectMode ? '#fff' : 'var(--color-text-muted)',
+              }}>
+              <CheckSquare size={13} /> Select
+            </button>
+            <button onClick={handleExportCsv} disabled={exporting}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-80 disabled:opacity-50"
+              style={{ backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+              {exporting
+                ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                : <Download size={13} />}
+              Export CSV
+            </button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Field type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
           <Field as="select" value={bucketId} onChange={(e) => setBucketId(e.target.value)}>
             <option value="">All categories</option>
             {buckets?.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
           </Field>
-          <button onClick={toggleSelectMode}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-80"
-            style={{
-              backgroundColor: selectMode ? 'var(--color-primary)' : 'var(--color-surface-2)',
-              border: '1px solid var(--color-border)',
-              color: selectMode ? '#fff' : 'var(--color-text-muted)',
-            }}>
-            <CheckSquare size={13} /> Select
-          </button>
-          <button onClick={handleExportCsv} disabled={exporting}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition hover:opacity-80 disabled:opacity-50"
-            style={{ backgroundColor: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
-            {exporting
-              ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              : <Download size={13} />}
-            Export CSV
-          </button>
         </div>
       </div>
 
