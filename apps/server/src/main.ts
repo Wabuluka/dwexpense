@@ -11,6 +11,8 @@ import { incomeRouter } from "./routes/income";
 import { recurringRouter } from "./routes/recurring";
 import { summaryRouter } from "./routes/summary";
 import migrateRouter from "./routes/migrate";
+import passwordResetRouter from "./routes/passwordReset";
+import googleAuthRouter from "./routes/googleAuth";
 import { exportRouter } from "./routes/export";
 import { savingsGoalsRouter } from "./routes/savingsGoals";
 import { netWorthRouter } from "./routes/netWorth";
@@ -38,6 +40,8 @@ app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
 // Public auth endpoints.
 app.use("/api/auth", authRouter);
+app.use("/api/auth", passwordResetRouter);
+app.use("/api/auth", googleAuthRouter);
 
 // Everything below requires a valid token and is scoped to the user.
 app.use("/api/buckets", requireAuth, bucketsRouter);

@@ -11,12 +11,16 @@ import { SavingsGoals } from './pages/SavingsGoals';
 import { NetWorth } from './pages/NetWorth';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 export function App() {
   return (
     <Routes>
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+      <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
+      <Route path="/reset-password" element={<GuestRoute><ResetPassword /></GuestRoute>} />
       <Route
         path="/*"
         element={

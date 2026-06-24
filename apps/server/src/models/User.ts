@@ -9,17 +9,23 @@ export interface UserDoc extends Document<Types.ObjectId> {
   theme?: 'light' | 'dark';
   currency?: string;
   createdAt: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+  googleId?: string;
 }
 
 const userSchema = new Schema<UserDoc>({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: true, default: '' },
   name: { type: String, default: '', trim: true },
   monthlySalary: { type: Number, default: 0, min: 0 },
   savingsGoal: { type: Number, default: 0, min: 0 },
   theme: { type: String, enum: ['light', 'dark'] },
   currency: { type: String, default: 'USD' },
   createdAt: { type: Date, default: Date.now },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
+  googleId: { type: String, sparse: true, unique: true },
 });
 
 export const User = model<UserDoc>('User', userSchema);

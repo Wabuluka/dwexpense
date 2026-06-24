@@ -2,17 +2,33 @@ import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { apiErrorMessage } from '../lib/api';
+import { api, apiErrorMessage } from '../lib/api';
 import { AuthShell } from '../components/AuthShell';
+import { GoogleButton } from '../components/GoogleButton';
 
 export function Register() {
-  const { register } = useAuth();
+  const { register, setUser } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  async function handleGoogleSuccess(idToken: string) {
+    setError('');
+    try {
+      const { data } = await api.post('/auth/google', { idToken });
+      import('../lib/api').then(({ tokenStore }) => {
+        tokenStore.set(data.token);
+        tokenStore.setRefresh(data.refreshToken);
+      });
+      setUser(data.user);
+      navigate('/');
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -87,6 +103,17 @@ export function Register() {
           {busy ? 'Creating account…' : 'Create account'}
         </button>
       </form>
+
+      <div className="mt-5">
+        <div className="relative flex items-center gap-3">
+          <div className="flex-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+          <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>or</span>
+          <div className="flex-1 border-t" style={{ borderColor: 'var(--color-border)' }} />
+        </div>
+        <div className="mt-4">
+          <GoogleButton onSuccess={handleGoogleSuccess} onError={setError} />
+        </div>
+      </div>
 
       <p className="mt-6 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
         Already have an account?{' '}
