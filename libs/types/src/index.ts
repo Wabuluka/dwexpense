@@ -274,6 +274,49 @@ export interface SplitExpenseInput {
   date?: string;
 }
 
+/* ----------------------------- Shopping Lists ------------------------------ */
+export interface ShoppingList {
+  _id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface ShoppingItem {
+  _id: string;
+  listId: string;
+  name: string;
+  estimatedPrice?: number;
+  bucketId?: string;
+  quantity: number;
+  checked: boolean;
+  checkedAt?: string;
+  createdAt: string;
+}
+
+export interface CreateShoppingListInput {
+  name: string;
+}
+
+export interface CreateShoppingItemInput {
+  name: string;
+  estimatedPrice?: number;
+  bucketId?: string;
+  quantity?: number;
+}
+
+export interface UpdateShoppingItemInput {
+  name?: string;
+  estimatedPrice?: number;
+  bucketId?: string;
+  quantity?: number;
+}
+
+export interface CheckShoppingItemInput {
+  createExpense?: boolean;
+  amount?: number;
+  date?: string;
+}
+
 /* ----------------------------------- Misc ---------------------------------- */
 export interface ApiError {
   error: string;

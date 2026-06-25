@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChartPie, Repeat2, ClockFading, BarChart2, SlidersHorizontal, Sun, Moon, LogOut, Settings, PiggyBank, TrendingUp } from 'lucide-react';
+import { ChartPie, Repeat2, ClockFading, BarChart2, SlidersHorizontal, Sun, Moon, LogOut, Settings, PiggyBank, TrendingUp, ShoppingCart } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
 
@@ -11,6 +11,7 @@ const nav = [
   { to: '/reports',       label: 'Reports',    icon: BarChart2 },
   { to: '/savings-goals', label: 'Goals',      icon: PiggyBank },
   { to: '/net-worth',     label: 'Net Worth',  icon: TrendingUp },
+  { to: '/shopping',      label: 'Shopping',   icon: ShoppingCart },
   { to: '/settings',      label: 'Settings',   icon: SlidersHorizontal },
 ];
 

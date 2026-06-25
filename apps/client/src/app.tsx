@@ -9,6 +9,7 @@ import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { SavingsGoals } from './pages/SavingsGoals';
 import { NetWorth } from './pages/NetWorth';
+import { ShoppingListPage } from './pages/ShoppingList';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
@@ -34,6 +35,7 @@ export function App() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/savings-goals" element={<SavingsGoals />} />
                 <Route path="/net-worth" element={<NetWorth />} />
+                <Route path="/shopping" element={<ShoppingListPage />} />
               </Routes>
             </Layout>
           </ProtectedRoute>
