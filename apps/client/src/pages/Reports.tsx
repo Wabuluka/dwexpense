@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, TrendingDown, TrendingUp, PiggyBank, Wallet, ArrowUpDown, Printer } from 'lucide-react';
-import { useSummary, useSummaryMonths } from '../hooks/useSummary';
+import { useSummary, useSummaryMonths, useTopItems } from '../hooks/useSummary';
 import { useQueries } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import type { MonthlySummary } from '@dwexpense/types';
@@ -45,6 +45,8 @@ export function Reports() {
 
   const { data: summary, isLoading: summaryLoading, isFetching: summaryFetching } = useSummary(month);
   const { data: compareSummary } = useSummary(compareMonth);
+  const { data: topItems = [] } = useTopItems(month);
+  const { data: prevTopItems = [] } = useTopItems(compareMonth);
 
   const trendData = useSixMonthTrend(months);
 
@@ -178,30 +180,110 @@ export function Reports() {
           {/* Category breakdown */}
           {summary.topCategories.length > 0 && (
             <div className="print-page rounded-xl p-5" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-              <h2 className="mb-4 text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Spending by category</h2>
-              <div className="space-y-3">
-                {summary.topCategories.map((cat) => {
+              <h2 className="mb-1 text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Most spent categories</h2>
+              <p className="mb-4 text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                {compareMonth ? `Compared to ${fmt(compareMonth)}` : 'This month'}
+              </p>
+              <div className="space-y-4">
+                {summary.topCategories.map((cat, i) => {
                   const pct = summary.totalSpent > 0 ? (cat.spent / summary.totalSpent) * 100 : 0;
                   const prevCat = compareSummary?.topCategories.find((c) => c.name === cat.name);
+                  const delta = prevCat ? cat.spent - prevCat.spent : undefined;
+                  const isHigher = delta !== undefined && delta > 0;
+                  const isLower = delta !== undefined && delta < 0;
                   return (
                     <div key={cat.name}>
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
+                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-bold w-4 text-right flex-shrink-0" style={{ color: 'var(--color-text-faint)' }}>
+                            #{i + 1}
+                          </span>
                           <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }} />
-                          <span style={{ color: 'var(--color-text)' }}>{cat.name}</span>
+                          <span className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>{cat.name}</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {prevCat && (
-                            <span style={{ color: cat.spent > prevCat.spent ? 'var(--color-error)' : 'var(--color-success)' }}>
-                              {cat.spent > prevCat.spent ? '+' : ''}{money(cat.spent - prevCat.spent)}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {delta !== undefined && (
+                            <span
+                              className="text-xs font-medium rounded-full px-2 py-0.5"
+                              style={{
+                                backgroundColor: isHigher ? 'rgba(220,38,38,0.1)' : isLower ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)',
+                                color: isHigher ? 'var(--color-error)' : isLower ? 'var(--color-success)' : 'var(--color-text-faint)',
+                              }}
+                            >
+                              {delta > 0 ? '+' : ''}{money(delta)}
                             </span>
                           )}
-                          <span className="font-medium" style={{ color: 'var(--color-text)' }}>{money(cat.spent)}</span>
-                          <span style={{ color: 'var(--color-text-faint)' }}>{pct.toFixed(0)}%</span>
+                          <span className="text-sm font-bold" style={{ color: 'var(--color-text)' }}>{money(cat.spent)}</span>
+                          <span className="text-xs w-8 text-right" style={{ color: 'var(--color-text-faint)' }}>{pct.toFixed(0)}%</span>
                         </div>
                       </div>
-                      <div className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-surface-2)' }}>
-                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                      <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-surface-2)' }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, backgroundColor: cat.color }}
+                        />
+                      </div>
+                      {prevCat && (
+                        <p className="mt-0.5 text-right text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                          {fmt(compareMonth!).split(' ')[0]}: {money(prevCat.spent)}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Top individual expenses */}
+          {topItems.length > 0 && (
+            <div className="print-page rounded-xl p-5" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+              <h2 className="mb-1 text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Biggest expenses</h2>
+              <p className="mb-4 text-xs" style={{ color: 'var(--color-text-faint)' }}>Top 10 individual transactions this month</p>
+              <div className="space-y-2">
+                {topItems.map((item, i) => {
+                  const prevItem = prevTopItems.find((p) => p.note && p.note === item.note && p.bucketName === item.bucketName);
+                  const delta = prevItem ? item.amount - prevItem.amount : undefined;
+                  const isHigher = delta !== undefined && delta > 0;
+                  const isLower = delta !== undefined && delta < 0;
+                  const pct = summary && summary.totalSpent > 0 ? (item.amount / summary.totalSpent) * 100 : 0;
+                  return (
+                    <div
+                      key={item._id}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5"
+                      style={{ backgroundColor: 'var(--color-surface-2)' }}
+                    >
+                      <span className="text-xs font-bold w-5 text-center flex-shrink-0" style={{ color: 'var(--color-text-faint)' }}>
+                        #{i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--color-text)' }}>
+                          {item.note || '(no note)'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {item.bucketColor && item.bucketName && (
+                            <span
+                              className="text-xs rounded-full px-1.5 py-0.5 font-medium"
+                              style={{ backgroundColor: `${item.bucketColor}20`, color: item.bucketColor }}
+                            >
+                              {item.bucketName}
+                            </span>
+                          )}
+                          <span className="text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                            {pct.toFixed(1)}% of total
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                        <span className="text-sm font-bold" style={{ color: 'var(--color-text)' }}>{money(item.amount)}</span>
+                        {delta !== undefined && (
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: isHigher ? 'var(--color-error)' : isLower ? 'var(--color-success)' : 'var(--color-text-faint)' }}
+                          >
+                            {delta > 0 ? '+' : ''}{money(delta)} vs prev
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
