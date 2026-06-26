@@ -274,6 +274,16 @@ export interface SplitExpenseInput {
   date?: string;
 }
 
+/* ----------------------------- Top Items ----------------------------------- */
+export interface TopExpenseItem {
+  _id: string;
+  amount: number;
+  note?: string;
+  date: string;
+  bucketName?: string;
+  bucketColor?: string;
+}
+
 /* ----------------------------- Shopping Lists ------------------------------ */
 export interface ShoppingList {
   _id: string;

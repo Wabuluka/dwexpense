@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import type { MonthlySummary } from '@dwexpense/types';
+import type { MonthlySummary, TopExpenseItem } from '@dwexpense/types';
 import { api } from '../lib/api';
 
 export function useSummary(month?: string) {
@@ -7,6 +7,20 @@ export function useSummary(month?: string) {
     queryKey: ['summary', month ?? 'current'],
     queryFn: async () => {
       const { data } = await api.get<MonthlySummary>('/summary', {
+        params: month ? { month } : undefined,
+      });
+      return data;
+    },
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
+  });
+}
+
+export function useTopItems(month?: string) {
+  return useQuery({
+    queryKey: ['top-items', month ?? 'current'],
+    queryFn: async () => {
+      const { data } = await api.get<TopExpenseItem[]>('/summary/top-items', {
         params: month ? { month } : undefined,
       });
       return data;

@@ -210,6 +210,48 @@ summaryRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   res.json(summary);
 }));
 
+/** GET /api/summary/top-items?month=YYYY-MM → top 10 individual expenses for the month. */
+summaryRouter.get('/top-items', asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req as AuthedRequest).userId!;
+  const oid = new mongoose.Types.ObjectId(userId);
+  const monthParam = typeof req.query.month === 'string' ? req.query.month : undefined;
+  const { start, end } = monthRange(monthParam);
+  const notDeleted = { $or: [{ deletedAt: null }, { deletedAt: { $exists: false } }] };
+
+  const items = await Expense.aggregate<{
+    _id: mongoose.Types.ObjectId;
+    amount: number;
+    note: string;
+    date: Date;
+    bucketName: string;
+    bucketColor: string;
+  }>([
+    { $match: { userId: oid, date: { $gte: start, $lt: end }, ...notDeleted } },
+    { $sort: { amount: -1 } },
+    { $limit: 10 },
+    {
+      $lookup: {
+        from: 'buckets',
+        localField: 'bucketId',
+        foreignField: '_id',
+        as: 'bucket',
+      },
+    },
+    { $unwind: { path: '$bucket', preserveNullAndEmpty: true } },
+    {
+      $project: {
+        amount: 1,
+        note: 1,
+        date: 1,
+        bucketName: '$bucket.name',
+        bucketColor: '$bucket.color',
+      },
+    },
+  ]);
+
+  res.json(items);
+}));
+
 /** GET /api/summary/months → list of YYYY-MM strings that have expense or income data. */
 summaryRouter.get('/months', asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthedRequest).userId!;
