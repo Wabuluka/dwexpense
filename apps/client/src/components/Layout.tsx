@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChartPie, Repeat2, ClockFading, BarChart2, SlidersHorizontal, Sun, Moon, LogOut, Settings, PiggyBank, TrendingUp, ShoppingCart } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
+import { AiChat } from './AiChat';
 
 // Main navbar — keep this short
 const nav = [
@@ -153,6 +154,9 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className="mx-auto max-w-3xl px-4 py-6 pb-28 md:pb-10">
         {children}
       </main>
+
+      {/* AI Chat floating assistant */}
+      {user && <AiChat />}
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t md:hidden"

@@ -18,6 +18,7 @@ import { savingsGoalsRouter } from "./routes/savingsGoals";
 import { netWorthRouter } from "./routes/netWorth";
 import { budgetTemplatesRouter } from "./routes/budgetTemplates";
 import { shoppingRouter } from "./routes/shopping";
+import { aiRouter } from "./routes/ai";
 import { User } from "./models/User";
 import { applyRecurringForUser } from "./lib/applyRecurring";
 
@@ -56,6 +57,7 @@ app.use("/api/savings-goals", requireAuth, savingsGoalsRouter);
 app.use("/api/net-worth", requireAuth, netWorthRouter);
 app.use("/api/budget-templates", requireAuth, budgetTemplatesRouter);
 app.use("/api/shopping", requireAuth, shoppingRouter);
+app.use("/api/ai", requireAuth, aiRouter);
 
 // Consistent JSON error format.
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
