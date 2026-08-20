@@ -43,6 +43,59 @@ expensesRouter.get('/', asyncHandler(async (req: Request, res: Response) => {
   res.json(expenses);
 }));
 
+/**
+ * GET /api/expenses/frequent → the user's most-repeated (note, bucket) pairs,
+ * used to power note autocomplete + amount/category auto-fill when logging a new expense.
+ * Looks at the last 180 days, capped to a reasonable sample, grouped by normalized note text.
+ */
+expensesRouter.get('/frequent', asyncHandler(async (req: Request, res: Response) => {
+  const userId = uid(req);
+  const oid = new mongoose.Types.ObjectId(userId);
+  const since = new Date();
+  since.setDate(since.getDate() - 180);
+
+  const results = await Expense.aggregate<{
+    _id: { note: string; bucketId: mongoose.Types.ObjectId };
+    avgAmount: number;
+    lastAmount: number;
+    count: number;
+    lastDate: Date;
+  }>([
+    {
+      $match: {
+        userId: oid,
+        deletedAt: null,
+        date: { $gte: since },
+        note: { $exists: true, $ne: '' },
+      },
+    },
+    { $sort: { date: -1 } },
+    {
+      $group: {
+        _id: { note: { $toLower: { $trim: { input: '$note' } } }, bucketId: '$bucketId' },
+        avgAmount: { $avg: '$amount' },
+        lastAmount: { $first: '$amount' },
+        lastDate: { $first: '$date' },
+        count: { $sum: 1 },
+      },
+    },
+    { $match: { count: { $gte: 2 } } },
+    { $sort: { count: -1, lastDate: -1 } },
+    { $limit: 30 },
+  ]);
+
+  res.json(
+    results.map((r) => ({
+      note: r._id.note,
+      bucketId: r._id.bucketId.toString(),
+      avgAmount: Math.round(r.avgAmount * 100) / 100,
+      lastAmount: r.lastAmount,
+      count: r.count,
+      lastDate: r.lastDate,
+    }))
+  );
+}));
+
 /** POST /api/expenses → validate amount > 0 and bucket belongs to user. */
 expensesRouter.post('/', asyncHandler(async (req: Request, res: Response) => {
   const userId = uid(req);

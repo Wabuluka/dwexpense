@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { X, DollarSign, Calendar } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { X, DollarSign, Calendar, Sparkles } from 'lucide-react';
 import type { BucketWithSpend } from '@dwexpense/types';
 import { useAddExpense } from '../hooks/useAddExpense';
+import { useFrequentExpenses } from '../hooks/useFrequentExpenses';
 import { todayInput, money } from '../lib/format';
 
 interface Props {
@@ -11,12 +12,52 @@ interface Props {
 
 export function ExpenseModal({ buckets, onClose }: Props) {
   const addExpense = useAddExpense();
+  const { data: frequent = [] } = useFrequentExpenses();
   const [amount, setAmount] = useState('');
   const [bucketId, setBucketId] = useState(buckets[0]?._id ?? '');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(todayInput());
+  const [bucketTouched, setBucketTouched] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [dismissedNudgeFor, setDismissedNudgeFor] = useState<string | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const noteWrapRef = useRef<HTMLDivElement>(null);
+
+  // Notes the user types repeatedly, matched against what's typed so far.
+  const suggestions = useMemo(() => {
+    const q = note.trim().toLowerCase();
+    if (!q) return frequent.slice(0, 5);
+    return frequent.filter((f) => f.note.includes(q)).slice(0, 5);
+  }, [frequent, note]);
+
+  // The historically-typical bucket for the note as currently typed (exact match).
+  const predicted = useMemo(() => {
+    const q = note.trim().toLowerCase();
+    if (!q) return undefined;
+    return frequent.find((f) => f.note === q);
+  }, [frequent, note]);
+
+  const predictedBucket = predicted ? buckets.find((b) => b._id === predicted.bucketId) : undefined;
+  const showCategoryNudge =
+    predictedBucket && bucketTouched && predictedBucket._id !== bucketId && dismissedNudgeFor !== predicted!.note;
+
+  function applySuggestion(f: (typeof frequent)[number]) {
+    setNote(f.note.replace(/\b\w/g, (c) => c.toUpperCase()));
+    setBucketId(f.bucketId);
+    setBucketTouched(false);
+    if (!amount) setAmount(String(f.lastAmount));
+    setShowSuggestions(false);
+  }
+
+  useEffect(() => {
+    if (!showSuggestions) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (noteWrapRef.current && !noteWrapRef.current.contains(e.target as Node)) setShowSuggestions(false);
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showSuggestions]);
 
   useEffect(() => { setTimeout(() => amountRef.current?.focus(), 60); }, []);
   useEffect(() => {
@@ -87,7 +128,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
               {buckets.map((b) => (
                 <button
                   key={b._id} type="button"
-                  onClick={() => setBucketId(b._id)}
+                  onClick={() => { setBucketId(b._id); setBucketTouched(true); }}
                   className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-left transition"
                   style={{
                     border: `1.5px solid ${bucketId === b._id ? b.color : 'var(--color-border)'}`,
@@ -114,7 +155,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           </div>
 
           {/* Note */}
-          <div>
+          <div ref={noteWrapRef} className="relative">
             <div className="mb-1.5 flex items-baseline justify-between">
               <label className="block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Note</label>
               <span className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>{note.length}/280</span>
@@ -123,13 +164,63 @@ export function ExpenseModal({ buckets, onClose }: Props) {
               value={note}
               maxLength={280}
               onChange={(e) => setNote(e.target.value)}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; setShowSuggestions(true); }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
               placeholder="What was this for? (optional)"
               rows={4}
               className="w-full resize-none rounded-xl px-3.5 py-3 text-sm leading-relaxed outline-none transition"
               style={{ backgroundColor: 'var(--color-surface-2)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
             />
+
+            {/* Frequent-note suggestions */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div
+                className="absolute left-0 right-0 top-full z-10 mt-1.5 overflow-hidden rounded-xl"
+                style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 8px 24px rgb(0 0 0 / 0.18)' }}
+              >
+                {suggestions.map((f) => {
+                  const b = buckets.find((bk) => bk._id === f.bucketId);
+                  return (
+                    <button
+                      key={`${f.note}-${f.bucketId}`} type="button"
+                      onMouseDown={(e) => { e.preventDefault(); applySuggestion(f); }}
+                      className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-sm transition hover:opacity-80"
+                      style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text)' }}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        {b && <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: b.color }} />}
+                        <span className="truncate capitalize">{f.note}</span>
+                      </span>
+                      <span className="flex-shrink-0 text-xs" style={{ color: 'var(--color-text-faint)' }}>
+                        {money(f.lastAmount)} · {f.count}×
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Category auto-correct nudge */}
+            {showCategoryNudge && predictedBucket && (
+              <button
+                type="button"
+                onClick={() => { setBucketId(predictedBucket._id); setBucketTouched(false); }}
+                className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition hover:opacity-90"
+                style={{ backgroundColor: `${predictedBucket.color}18`, border: `1px solid ${predictedBucket.color}40`, color: predictedBucket.color }}
+              >
+                <Sparkles size={13} className="flex-shrink-0" />
+                <span className="flex-1">
+                  You usually log "{note.trim()}" under <strong>{predictedBucket.name}</strong> — switch?
+                </span>
+                <span
+                  role="button"
+                  onClick={(e) => { e.stopPropagation(); setDismissedNudgeFor(predicted!.note); }}
+                  className="flex-shrink-0 opacity-60 hover:opacity-100"
+                >
+                  <X size={12} />
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Date */}

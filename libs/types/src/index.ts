@@ -84,6 +84,15 @@ export interface CreateExpenseInput {
   date?: string;
 }
 
+export interface FrequentExpense {
+  note: string;
+  bucketId: string;
+  avgAmount: number;
+  lastAmount: number;
+  count: number;
+  lastDate: string;
+}
+
 export interface ExpenseFilters {
   bucketId?: string;
   /** YYYY-MM */
