@@ -1,9 +1,8 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { X, DollarSign } from 'lucide-react';
+import { X, DollarSign, Calendar } from 'lucide-react';
 import type { BucketWithSpend } from '@dwexpense/types';
 import { useAddExpense } from '../hooks/useAddExpense';
 import { todayInput, money } from '../lib/format';
-import { Field } from './Field';
 
 interface Props {
   buckets: BucketWithSpend[];
@@ -50,11 +49,11 @@ export function ExpenseModal({ buckets, onClose }: Props) {
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-t-2xl sm:rounded-2xl"
-        style={{ backgroundColor: 'var(--color-surface)', boxShadow: '0 20px 60px rgb(0 0 0 / 0.3)' }}
+        className="flex w-full max-w-md flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl"
+        style={{ backgroundColor: 'var(--color-surface)', boxShadow: '0 20px 60px rgb(0 0 0 / 0.3)', maxHeight: '92dvh' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+        <div className="flex flex-shrink-0 items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <div>
             <h3 className="font-bold" style={{ color: 'var(--color-text)' }}>Add expense</h3>
             <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>Record a new transaction</p>
@@ -64,7 +63,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           </button>
         </div>
 
-        <form onSubmit={submit} className="space-y-5 p-5">
+        <form id="expense-form" onSubmit={submit} className="space-y-5 overflow-y-auto p-5">
           {/* Amount */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Amount</label>
@@ -114,25 +113,53 @@ export function ExpenseModal({ buckets, onClose }: Props) {
             )}
           </div>
 
-          {/* Note + Date */}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Note" placeholder="optional" value={note} onChange={(e) => setNote(e.target.value)} />
-            <Field label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          {/* Note */}
+          <div>
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Note</label>
+              <span className="text-[11px]" style={{ color: 'var(--color-text-faint)' }}>{note.length}/280</span>
+            </div>
+            <textarea
+              value={note}
+              maxLength={280}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What was this for? (optional)"
+              rows={4}
+              className="w-full resize-none rounded-xl px-3.5 py-3 text-sm leading-relaxed outline-none transition"
+              style={{ backgroundColor: 'var(--color-surface-2)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
+            />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-80" style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
-              Cancel
-            </button>
-            <button type="submit" disabled={addExpense.isPending || !amount || !bucketId}
-              className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-40"
-              style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-fg)' }}>
-              {addExpense.isPending && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-              {addExpense.isPending ? 'Saving…' : 'Add expense'}
-            </button>
+          {/* Date */}
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Date</label>
+            <div className="relative">
+              <Calendar size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-faint)' }} />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm"
+                style={{ backgroundColor: 'var(--color-surface-2)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+              />
+            </div>
           </div>
         </form>
+
+        {/* Actions */}
+        <div className="flex flex-shrink-0 gap-3 p-5 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}>
+          <button type="button" onClick={onClose} className="flex-1 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-80" style={{ backgroundColor: 'var(--color-surface-2)', color: 'var(--color-text-muted)' }}>
+            Cancel
+          </button>
+          <button type="submit" form="expense-form" disabled={addExpense.isPending || !amount || !bucketId}
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-40"
+            style={{ backgroundColor: 'var(--color-primary)', color: 'var(--color-primary-fg)' }}>
+            {addExpense.isPending && <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />}
+            {addExpense.isPending ? 'Saving…' : 'Add expense'}
+          </button>
+        </div>
       </div>
     </div>
   );

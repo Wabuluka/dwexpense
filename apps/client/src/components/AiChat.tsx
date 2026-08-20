@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, RefreshCw, Sparkles } from 'lucide-react';
+import { Bot, Send, X, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useAiChat } from '../hooks/useAiChat';
 
@@ -10,8 +10,12 @@ const SUGGESTIONS = [
   'What should I cut to save more?',
 ];
 
-export function AiChat() {
-  const [open, setOpen] = useState(false);
+interface Props {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function AiChat({ open, onClose }: Props) {
   const [input, setInput] = useState('');
   const { messages, streaming, error, sendMessage, reset } = useAiChat();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -40,18 +44,6 @@ export function AiChat() {
 
   return (
     <>
-      {/* Floating button */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-20 right-4 z-50 flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-white shadow-lg transition hover:scale-105 sm:bottom-6 sm:right-6"
-          style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
-        >
-          <Sparkles size={16} />
-          Ask AI
-        </button>
-      )}
-
       {/* Chat panel — full-screen bottom sheet on mobile, floating panel on sm+ */}
       {open && (
         <div
@@ -88,7 +80,7 @@ export function AiChat() {
                 </button>
               )}
               <button
-                onClick={() => setOpen(false)}
+                onClick={onClose}
                 className="rounded-lg p-1.5 transition hover:bg-white/10"
                 style={{ color: 'rgba(148,163,184,0.7)' }}
               >

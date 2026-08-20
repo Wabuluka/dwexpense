@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChartPie, Repeat2, ClockFading, BarChart2, SlidersHorizontal, Sun, Moon, LogOut, Settings, PiggyBank, TrendingUp, ShoppingCart } from 'lucide-react';
+import { ChartPie, Repeat2, ClockFading, BarChart2, SlidersHorizontal, Sun, Moon, LogOut, Settings, PiggyBank, TrendingUp, ShoppingCart, Sparkles } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../context/AuthContext';
 import { AiChat } from './AiChat';
@@ -28,6 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,6 +126,15 @@ export function Layout({ children }: { children: ReactNode }) {
                   style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', boxShadow: '0 8px 32px rgb(0 0 0 / 0.18)' }}>
                   <p className="px-3 py-1.5 text-xs truncate" style={{ color: 'var(--color-text-faint)' }}>{user.email}</p>
                   <div className="my-1" style={{ borderTop: '1px solid var(--color-border)' }} />
+                  <button
+                    onClick={() => { setMenuOpen(false); setAiChatOpen(true); }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors"
+                    style={{ color: 'var(--color-text-muted)' }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-surface-2)'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.backgroundColor = ''}>
+                    <Sparkles size={13} /> Ask AI
+                  </button>
+                  <div className="my-1" style={{ borderTop: '1px solid var(--color-border)' }} />
                   {secondaryNav.map(({ to, label, icon: Icon }) => (
                     <Link key={to} to={to}
                       onClick={() => setMenuOpen(false)}
@@ -155,8 +165,8 @@ export function Layout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      {/* AI Chat floating assistant */}
-      {user && ['/', '/history', '/reports', '/shopping', '/recurring', '/savings-goals'].some(p => pathname === p || pathname.startsWith(p + '/')) && <AiChat />}
+      {/* AI Chat assistant — opened from the profile menu */}
+      {user && <AiChat open={aiChatOpen} onClose={() => setAiChatOpen(false)} />}
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t md:hidden"
