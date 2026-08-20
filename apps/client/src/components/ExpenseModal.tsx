@@ -4,6 +4,7 @@ import type { BucketWithSpend } from '@dwexpense/types';
 import { useAddExpense } from '../hooks/useAddExpense';
 import { useFrequentExpenses } from '../hooks/useFrequentExpenses';
 import { todayInput, money } from '../lib/format';
+import { bucketIcon } from '../lib/bucketIcons';
 
 interface Props {
   buckets: BucketWithSpend[];
@@ -41,6 +42,14 @@ export function ExpenseModal({ buckets, onClose }: Props) {
   const predictedBucket = predicted ? buckets.find((b) => b._id === predicted.bucketId) : undefined;
   const showCategoryNudge =
     predictedBucket && bucketTouched && predictedBucket._id !== bucketId && dismissedNudgeFor !== predicted!.note;
+
+  // Rank categories by how often they're actually used (frequent-note hits, summed per bucket),
+  // so the ones you reach for most surface first instead of a static alphabetical/creation order.
+  const orderedBuckets = useMemo(() => {
+    const usage = new Map<string, number>();
+    for (const f of frequent) usage.set(f.bucketId, (usage.get(f.bucketId) ?? 0) + f.count);
+    return [...buckets].sort((a, b) => (usage.get(b._id) ?? 0) - (usage.get(a._id) ?? 0));
+  }, [buckets, frequent]);
 
   function applySuggestion(f: (typeof frequent)[number]) {
     setNote(f.note.replace(/\b\w/g, (c) => c.toUpperCase()));
@@ -125,21 +134,39 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Category</label>
             <div className="grid grid-cols-2 gap-2">
-              {buckets.map((b) => (
-                <button
-                  key={b._id} type="button"
-                  onClick={() => { setBucketId(b._id); setBucketTouched(true); }}
-                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-left transition"
-                  style={{
-                    border: `1.5px solid ${bucketId === b._id ? b.color : 'var(--color-border)'}`,
-                    backgroundColor: bucketId === b._id ? `${b.color}18` : 'var(--color-surface-2)',
-                    color: bucketId === b._id ? b.color : 'var(--color-text)',
-                  }}
-                >
-                  <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
-                  <span className="truncate">{b.name}</span>
-                </button>
-              ))}
+              {orderedBuckets.map((b) => {
+                const Icon = bucketIcon(b.name);
+                const active = bucketId === b._id;
+                const pct = b.monthlyLimit > 0 ? Math.min(100, (b.spent / b.monthlyLimit) * 100) : 0;
+                const over = b.monthlyLimit > 0 && b.spent > b.monthlyLimit;
+                return (
+                  <button
+                    key={b._id} type="button"
+                    onClick={() => { setBucketId(b._id); setBucketTouched(true); }}
+                    className="flex flex-col gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium text-left transition"
+                    style={{
+                      border: `1.5px solid ${active ? b.color : 'var(--color-border)'}`,
+                      backgroundColor: active ? `${b.color}18` : 'var(--color-surface-2)',
+                      color: active ? b.color : 'var(--color-text)',
+                    }}
+                  >
+                    <span className="flex items-center gap-2 min-w-0">
+                      <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${b.color}22`, color: b.color }}>
+                        <Icon size={13} />
+                      </span>
+                      <span className="truncate">{b.name}</span>
+                    </span>
+                    {b.monthlyLimit > 0 && (
+                      <span className="h-1 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-border)' }}>
+                        <span
+                          className="block h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: over ? 'var(--color-error)' : b.color }}
+                        />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
             {selectedBucket && selectedBucket.monthlyLimit > 0 && (
               <div className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5 text-xs" style={{
