@@ -79,6 +79,18 @@ export function ExpenseModal({ buckets, onClose }: Props) {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  // Mobile browsers shrink the visual viewport when the keyboard opens without resizing the
+  // layout viewport, so an element that's "in view" by scroll position can still sit behind the
+  // keyboard. Re-scroll the note field into view whenever the visual viewport changes while the
+  // suggestions dropdown is open.
+  useEffect(() => {
+    if (!showSuggestions || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const onResize = () => noteWrapRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    vv.addEventListener('resize', onResize);
+    return () => vv.removeEventListener('resize', onResize);
+  }, [showSuggestions]);
+
   function submit(e: FormEvent) {
     e.preventDefault();
     const value = parseFloat(amount);
@@ -99,7 +111,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
-        className="flex w-full max-w-md flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl"
+        className="flex w-full max-w-md flex-col overflow-x-hidden overflow-y-hidden rounded-t-2xl sm:rounded-2xl"
         style={{ backgroundColor: 'var(--color-surface)', boxShadow: '0 20px 60px rgb(0 0 0 / 0.3)', maxHeight: '92dvh' }}
       >
         {/* Header */}
@@ -113,7 +125,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           </button>
         </div>
 
-        <form id="expense-form" onSubmit={submit} className="space-y-5 overflow-y-auto p-5">
+        <form id="expense-form" onSubmit={submit} className="space-y-5 overflow-y-auto overflow-x-hidden p-5">
           {/* Amount */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Amount</label>
@@ -191,7 +203,13 @@ export function ExpenseModal({ buckets, onClose }: Props) {
               value={note}
               maxLength={280}
               onChange={(e) => setNote(e.target.value)}
-              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-primary)'; setShowSuggestions(true); }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--color-primary)';
+                setShowSuggestions(true);
+                // Wait for the on-screen keyboard to open (and the visual viewport to shrink)
+                // before scrolling, otherwise the suggestions can end up positioned under it.
+                setTimeout(() => noteWrapRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300);
+              }}
               onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; }}
               placeholder="What was this for? (optional)"
               rows={4}
@@ -251,16 +269,22 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           </div>
 
           {/* Date */}
-          <div>
+          <div className="min-w-0">
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Date</label>
-            <div className="relative">
+            <div className="relative min-w-0">
               <Calendar size={15} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--color-text-faint)' }} />
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm"
-                style={{ backgroundColor: 'var(--color-surface-2)', border: '1.5px solid var(--color-border)', color: 'var(--color-text)' }}
+                className="w-full min-w-0 max-w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm"
+                style={{
+                  backgroundColor: 'var(--color-surface-2)',
+                  border: '1.5px solid var(--color-border)',
+                  color: 'var(--color-text)',
+                  boxSizing: 'border-box',
+                  colorScheme: 'light dark',
+                }}
               />
             </div>
           </div>
