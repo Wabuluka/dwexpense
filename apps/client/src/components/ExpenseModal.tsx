@@ -111,8 +111,8 @@ export function ExpenseModal({ buckets, onClose }: Props) {
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
       <div
-        className="flex w-full max-w-md flex-col overflow-x-hidden overflow-y-hidden rounded-t-2xl sm:rounded-2xl"
-        style={{ backgroundColor: 'var(--color-surface)', boxShadow: '0 20px 60px rgb(0 0 0 / 0.3)', maxHeight: '92dvh' }}
+        className="flex w-full max-w-md min-w-0 flex-col overflow-x-hidden overflow-y-hidden rounded-t-2xl sm:rounded-2xl"
+        style={{ backgroundColor: 'var(--color-surface)', boxShadow: '0 20px 60px rgb(0 0 0 / 0.3)', maxHeight: '92dvh', width: '100%' }}
       >
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -125,7 +125,7 @@ export function ExpenseModal({ buckets, onClose }: Props) {
           </button>
         </div>
 
-        <form id="expense-form" onSubmit={submit} className="space-y-5 overflow-y-auto overflow-x-hidden p-5">
+        <form id="expense-form" onSubmit={submit} className="w-full min-w-0 space-y-5 overflow-y-auto overflow-x-hidden p-5">
           {/* Amount */}
           <div>
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Amount</label>
@@ -277,13 +277,16 @@ export function ExpenseModal({ buckets, onClose }: Props) {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full min-w-0 max-w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm"
+                className="block w-full min-w-0 max-w-full rounded-xl py-2.5 pl-10 pr-3.5 text-sm"
                 style={{
                   backgroundColor: 'var(--color-surface-2)',
                   border: '1.5px solid var(--color-border)',
                   color: 'var(--color-text)',
                   boxSizing: 'border-box',
                   colorScheme: 'light dark',
+                  width: '100%',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
                 }}
               />
             </div>
